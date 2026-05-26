@@ -1,46 +1,59 @@
 # Assignment 1: Retrieval, Honest Comparison
 
-This repo implements a **simple, reproducible retrieval benchmark** over FastAPI docs section chunks.
+This repository implements a small retrieval benchmark over a real technical corpus: section-level chunks from the official FastAPI documentation.
 
-## What is included
+The goal is not to build a polished demo. The goal is to make a defensible comparison between retrieval configurations on the same corpus and the same labelled queries.
 
-- `src/build_corpus.py`
-  - Downloads FastAPI docs sitemap.
-  - Fetches pages.
-  - Splits each page into section-level chunks (`h2`/`h3` blocks).
-  - Writes `data/docs.jsonl` (target: 200–500 real docs).
-- `src/retrieve.py`
-  - BM25 retrieval (`rank_bm25`).
-  - Dense retrieval using `sentence-transformers/all-MiniLM-L6-v2`.
-  - Hybrid retrieval with min-max normalized score blending (`0.5*bm25 + 0.5*dense`).
-- `src/evaluate.py`
-  - Runs 20 hand-written labelled queries from `data/queries.jsonl`.
-  - Computes recall@5, MRR, and p95 latency for all three configs.
-  - Writes `results/metrics.csv` and `results/failures.jsonl`.
-- `Makefile`
-  - `make run` builds corpus then evaluates.
+## Why I picked this assignment
+
+I picked the retrieval assignment because retrieval quality is central to production RAG systems. In an AI product, the model can only answer well if the right context is retrieved first, so I wanted to test retrieval as an engineering problem rather than just use a vector database blindly.
+
+I used FastAPI documentation because it is a real technical corpus, not synthetic data. It is also relevant to backend AI engineering because FastAPI is commonly used for Python API services. The documentation has a mix of exact technical terms, such as `Depends`, `APIRouter`, and `OAuth2`, as well as broader conceptual pages, which makes it useful for comparing keyword, dense, and hybrid retrieval.
+
+## What the system does
+
+The pipeline has three stages:
+
+1. `src/build_corpus.py`
+   - downloads the FastAPI documentation sitemap;
+   - fetches documentation pages;
+   - splits pages into section-level chunks using headings;
+   - writes `data/docs.jsonl`.
+
+2. `src/retrieve.py`
+   - implements BM25 retrieval using `rank_bm25`;
+   - implements dense retrieval using `sentence-transformers/all-MiniLM-L6-v2`;
+   - implements hybrid retrieval using a 50/50 blend of min-max normalised BM25 and dense scores.
+
+3. `src/evaluate.py`
+   - runs the same 20 labelled queries against all three retrieval configurations;
+   - computes recall@5, MRR, and p95 retrieval latency;
+   - writes `results/metrics.csv` and `results/failures.jsonl`.
+
+## Corpus
+
+The final run produced:
+
+- 450 section-level documents in `data/docs.jsonl`;
+- all documents came from the FastAPI documentation;
+- each document stores a URL, title, and text chunk.
+
+I used section-level chunks rather than whole pages because whole documentation pages often contain several different concepts. Section chunks make the retrieval task closer to a realistic RAG setup, where a system needs to retrieve a focused passage rather than an entire long page.
 
 ## Queries
 
-- `data/queries.jsonl` has 20 labelled queries.
-- Includes 5 deliberately hard queries (`difficulty: "hard"`) with paraphrase/multi-hop/ambiguity flavor.
+The benchmark uses 20 hand-written labelled queries in `data/queries.jsonl`.
 
-## Run
+The query set includes:
+
+- normal documentation lookup queries;
+- exact technical keyword queries;
+- 5 deliberately hard queries involving paraphrase, ambiguity, or multi-hop intent.
+
+Each query is labelled with the documentation URL substring that should appear in the top-k results.
+
+## How to run
 
 ```bash
 python3 -m pip install -r requirements.txt
 make run
-```
-
-## Performance constraint
-
-Target is p95 retrieval latency under 1 second on a single laptop/free-tier VM.
-If it is not met in your run, inspect `results/metrics.csv` and document bottlenecks.
-
-## Honest failure analysis (what best config still misses)
-
-Even when hybrid is best overall, it still tends to fail on ambiguous queries where the wording mixes two concepts (for example docs metadata + OpenAPI exposure) or where the relevant answer spans multiple sections/pages. In those cases BM25 may over-prioritize literal token overlap from the wrong page, while dense retrieval may retrieve semantically close but still non-answer sections. The 50/50 linear blend helps but cannot fully resolve intent ambiguity or multi-hop evidence needs without query decomposition, reranking, or context-aware aggregation across related sections.
-
-## Notes about this execution environment
-
-This environment blocked dependency installation/network package index access during execution, so placeholder `results/metrics.csv` and `results/failures.jsonl` are included and should be regenerated in a normal Python environment by running `make run`.
