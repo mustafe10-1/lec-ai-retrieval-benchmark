@@ -1,0 +1,20 @@
+{"query_id":"q01","query":"How do I declare query parameters in a FastAPI path operation?","relevant_url_substring":"/tutorial/query-params/","difficulty":"normal"}
+{"query_id":"q02","query":"How can I define path parameters with Python type hints?","relevant_url_substring":"/tutorial/path-params/","difficulty":"normal"}
+{"query_id":"q03","query":"How do I read request bodies with Pydantic models?","relevant_url_substring":"/tutorial/body/","difficulty":"normal"}
+{"query_id":"q04","query":"How do dependencies work with Depends in FastAPI?","relevant_url_substring":"/tutorial/dependencies/","difficulty":"normal"}
+{"query_id":"q05","query":"How can I secure routes using OAuth2 password flow and JWT?","relevant_url_substring":"/tutorial/security/oauth2-jwt/","difficulty":"normal"}
+{"query_id":"q06","query":"How do I upload files and form data?","relevant_url_substring":"/tutorial/request-forms-and-files/","difficulty":"normal"}
+{"query_id":"q07","query":"How can I enable CORS middleware?","relevant_url_substring":"/tutorial/cors/","difficulty":"normal"}
+{"query_id":"q08","query":"How do I return custom response classes like HTMLResponse?","relevant_url_substring":"/advanced/custom-response/","difficulty":"normal"}
+{"query_id":"q09","query":"How do I run startup and shutdown events (lifespan)?","relevant_url_substring":"/advanced/events/","difficulty":"normal"}
+{"query_id":"q10","query":"How do I test FastAPI endpoints with TestClient?","relevant_url_substring":"/tutorial/testing/","difficulty":"normal"}
+{"query_id":"q11","query":"How can I mount StaticFiles for CSS or images?","relevant_url_substring":"/tutorial/static-files/","difficulty":"normal"}
+{"query_id":"q12","query":"How do I use background tasks to run work after response?","relevant_url_substring":"/tutorial/background-tasks/","difficulty":"normal"}
+{"query_id":"q13","query":"Where is OpenAPI schema generated and how can I customize docs URLs?","relevant_url_substring":"/tutorial/metadata/","difficulty":"normal"}
+{"query_id":"q14","query":"How do I create bigger apps using APIRouter and multiple files?","relevant_url_substring":"/tutorial/bigger-applications/","difficulty":"normal"}
+{"query_id":"q15","query":"How do I handle errors with HTTPException and custom handlers?","relevant_url_substring":"/tutorial/handling-errors/","difficulty":"normal"}
+{"query_id":"q16","query":"I need one auth helper reused in many endpoints and still receive validated query args. Which pattern links shared logic and parameter parsing?","relevant_url_substring":"/tutorial/dependencies/","difficulty":"hard"}
+{"query_id":"q17","query":"If docs UI is blocked in production but schema should still exist, where do I tweak endpoints for docs/openapi exposure?","relevant_url_substring":"/tutorial/metadata/","difficulty":"hard"}
+{"query_id":"q18","query":"I want long-running email sending not to block users; should this happen inside request handler or deferred mechanism?","relevant_url_substring":"/tutorial/background-tasks/","difficulty":"hard"}
+{"query_id":"q19","query":"I receive 422 for mixed path/body inputs; what explains FastAPI validation across route params and JSON payload together?","relevant_url_substring":"/tutorial/body/","difficulty":"hard"}
+{"query_id":"q20","query":"Need browser app on another domain calling cookie-protected API; which cross-origin settings and middleware caveats matter?","relevant_url_substring":"/tutorial/cors/","difficulty":"hard"}

@@ -1,0 +1,4 @@
+config,recall@5,mrr,p95_latency_ms
+bm25,NA,NA,NA
+dense,NA,NA,NA
+hybrid,NA,NA,NA
