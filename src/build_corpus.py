@@ -11,8 +11,9 @@ import requests
 from bs4 import BeautifulSoup
 
 SITEMAP_URL = "https://fastapi.tiangolo.com/sitemap.xml"
+QUERIES_PATH = Path("data/queries.jsonl")
 OUTPUT_PATH = Path("data/docs.jsonl")
-MAX_DOCS = 450
+MAX_DOCS = 500
 MIN_DOCS = 200
 
 
@@ -92,20 +93,82 @@ def extract_sections(url: str) -> Iterable[SectionDoc]:
         )
 
 
+def get_required_substrings() -> list[str]:
+    substrings: list[str] = []
+    for line in QUERIES_PATH.read_text(encoding="utf-8").splitlines():
+        q = json.loads(line)
+        subs = q.get("relevant_url_substrings") or [q.get("relevant_url_substring", "")]
+        substrings.extend(s for s in subs if s)
+    return list(dict.fromkeys(substrings))
+
+
+def find_priority_urls(all_urls: list[str], required_substrings: list[str]) -> list[str]:
+    priority: list[str] = []
+    seen: set[str] = set()
+    for sub in required_substrings:
+        best: str | None = None
+        # Prefer the URL whose path ends exactly with the required substring
+        for url in all_urls:
+            if url.rstrip("/").endswith(sub.rstrip("/")):
+                best = url
+                break
+        # Fall back to first URL that contains the substring
+        if best is None:
+            for url in all_urls:
+                if sub in url:
+                    best = url
+                    break
+        if best and best not in seen:
+            priority.append(best)
+            seen.add(best)
+    return priority
+
+
+def validate_coverage(docs: list[SectionDoc], required_substrings: list[str]) -> None:
+    doc_urls = {d.source_url for d in docs}
+    missing = [
+        sub for sub in required_substrings
+        if not any(sub in url for url in doc_urls)
+    ]
+    if missing:
+        msg = "Required URL substrings not covered by corpus after build:\n" + "\n".join(f"  {s}" for s in missing)
+        raise RuntimeError(msg)
+
+
 def build_corpus() -> list[SectionDoc]:
+    all_urls = get_doc_urls()
+    required_substrings = get_required_substrings()
+    priority_urls = find_priority_urls(all_urls, required_substrings)
+    remaining_urls = [u for u in all_urls if u not in set(priority_urls)]
+
     docs: list[SectionDoc] = []
-    for url in get_doc_urls():
+
+    # Fetch required pages first to guarantee every query label is satisfiable
+    for url in priority_urls:
+        for sec in extract_sections(url):
+            docs.append(sec)
+        time.sleep(0.05)
+
+    # Fill from sitemap order until corpus cap
+    for url in remaining_urls:
+        if len(docs) >= MAX_DOCS:
+            break
         for sec in extract_sections(url):
             docs.append(sec)
             if len(docs) >= MAX_DOCS:
-                return docs
+                break
         time.sleep(0.05)
+
     return docs
 
 
 def main() -> None:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     docs = build_corpus()
+
+    required_substrings = get_required_substrings()
+    validate_coverage(docs, required_substrings)
+
     if len(docs) < MIN_DOCS:
         raise RuntimeError(f"Only collected {len(docs)} docs; need at least {MIN_DOCS}")
 

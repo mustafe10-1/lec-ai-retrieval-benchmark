@@ -49,15 +49,16 @@ class RetrieverSuite:
         idx = np.argsort(scores)[::-1][:top_k]
         return [RetrievedDoc(self.doc_ids[i], float(scores[i])) for i in idx]
 
-    def hybrid_search(self, query: str, top_k: int = 5) -> list[RetrievedDoc]:
+    def hybrid_search(self, query: str, top_k: int = 5, alpha: float = 0.5) -> list[RetrievedDoc]:
+        """alpha is the dense weight; (1-alpha) is the BM25 weight."""
         bm25_scores = np.array(self.bm25.get_scores(tokenize(query)))
-        q = self.model.encode([query], convert_to_numpy=True, show_progress_bar=False)[0]
-        q = q / np.linalg.norm(q)
-        dense_scores = self.doc_embeddings @ q
+        q_vec = self.model.encode([query], convert_to_numpy=True, show_progress_bar=False)[0]
+        q_vec = q_vec / np.linalg.norm(q_vec)
+        dense_scores = self.doc_embeddings @ q_vec
 
         bm25_norm = min_max(bm25_scores)
         dense_norm = min_max(dense_scores)
-        blended = 0.5 * bm25_norm + 0.5 * dense_norm
+        blended = alpha * dense_norm + (1.0 - alpha) * bm25_norm
 
         idx = np.argsort(blended)[::-1][:top_k]
         return [RetrievedDoc(self.doc_ids[i], float(blended[i])) for i in idx]
@@ -68,10 +69,13 @@ class RetrieverSuite:
             out = self.bm25_search(query, top_k)
         elif config == "dense":
             out = self.dense_search(query, top_k)
-        elif config == "hybrid":
-            out = self.hybrid_search(query, top_k)
+        elif config == "hybrid" or config.startswith("hybrid_a"):
+            alpha = 0.5
+            if config.startswith("hybrid_a"):
+                alpha = float(config[len("hybrid_a"):])
+            out = self.hybrid_search(query, top_k, alpha=alpha)
         else:
-            raise ValueError(config)
+            raise ValueError(f"Unknown config: {config!r}")
         elapsed_ms = (time.perf_counter() - start) * 1000.0
         return out, elapsed_ms
 
